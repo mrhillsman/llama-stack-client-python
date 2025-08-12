@@ -2,6 +2,14 @@
 
 ## 0.2.18-alpha.1 (2025-08-12)
 
+Full Changelog: [v0.2.18-alpha.1...v0.2.18-alpha.1](https://github.com/llamastack/llama-stack-client-python/compare/v0.2.18-alpha.1...v0.2.18-alpha.1)
+
+### Features
+
+* **api:** update via SDK Studio ([db99707](https://github.com/llamastack/llama-stack-client-python/commit/db9970745de255a3718edb6aee8360b55f58592e))
+
+## 0.2.18-alpha.1 (2025-08-12)
+
 Full Changelog: [v0.2.17...v0.2.18-alpha.1](https://github.com/llamastack/llama-stack-client-python/compare/v0.2.17...v0.2.18-alpha.1)
 
 ### Features
