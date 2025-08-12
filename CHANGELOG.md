@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.18-alpha.1 (2025-08-12)
+
+Full Changelog: [v0.2.17...v0.2.18-alpha.1](https://github.com/llamastack/llama-stack-client-python/compare/v0.2.17...v0.2.18-alpha.1)
+
+### Features
+
+* **api:** update via SDK Studio ([8afae6c](https://github.com/llamastack/llama-stack-client-python/commit/8afae6c1e1a4614cc59db7ae511440693e0479a6))
+* **api:** update via SDK Studio ([143a973](https://github.com/llamastack/llama-stack-client-python/commit/143a973ea9ff81da1d93c421af8c85dbd171ef3c))
+* **api:** update via SDK Studio ([b8e32bb](https://github.com/llamastack/llama-stack-client-python/commit/b8e32bbbf68f8a75c956079119c6b65d7ac165e5))
+* **api:** update via SDK Studio ([1a2c77d](https://github.com/llamastack/llama-stack-client-python/commit/1a2c77df732eb9d0c031e0ff7558176fbf754ad8))
+* **api:** update via SDK Studio ([d66fb5f](https://github.com/llamastack/llama-stack-client-python/commit/d66fb5fe89acb66a55066d82b849bbf4d402db99))
+
+
+### Chores
+
+* **internal:** update comment in script ([8d599cd](https://github.com/llamastack/llama-stack-client-python/commit/8d599cd47f98f704f89c9bd979a55cc334895107))
+* update @stainless-api/prism-cli to v5.15.0 ([5f8ae94](https://github.com/llamastack/llama-stack-client-python/commit/5f8ae94955bb3403c0abe89f2999c2d49af97b07))
+
 ## 0.2.17 (2025-08-06)
 
 Full Changelog: [v0.2.15...v0.2.17](https://github.com/llamastack/llama-stack-client-python/compare/v0.2.15...v0.2.17)
