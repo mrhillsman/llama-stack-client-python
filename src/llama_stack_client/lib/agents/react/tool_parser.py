@@ -34,30 +34,97 @@ class ReActOutput(BaseModel):
 
 class ReActToolParser(ToolParser):
     def get_tool_calls(self, output_message: CompletionMessage) -> List[ToolCall]:
-        tool_calls = []
+        """
+        Parse ReAct-formatted responses and extract tool calls.
+        
+        Returns empty list if:
+        - Response contains a final answer (task is complete)
+        - Response is thinking-only (no action specified)
+        - Response is malformed
+        """
+        tool_calls: List[ToolCall] = []
         response_text = str(output_message.content)
+        
         try:
             react_output = ReActOutput.model_validate_json(response_text)
         except ValidationError as e:
-            print(f"Error parsing action: {e}")
+            # Enhanced error logging for debugging ReAct responses
+            print(f"ReAct parsing error: {e}")
+            print(f"Response content: {response_text[:200]}...")
             return tool_calls
 
-        if react_output.answer:
+        # Validate ReAct structure
+        if not self._validate_react_structure(react_output):
             return tool_calls
 
-        if react_output.action:
-            tool_name = react_output.action.tool_name
-            tool_params = react_output.action.tool_params
-            params = {param.name: param.value for param in tool_params}
-            if tool_name and tool_params:
-                call_id = str(uuid.uuid4())
-                tool_calls = [
-                    ToolCall(
-                        call_id=call_id,
-                        tool_name=tool_name,
-                        arguments=params,
-                        arguments_json=json.dumps(params),
-                    )
-                ]
+        # If final answer is provided, no tool calls needed
+        if react_output.answer is not None:
+            return tool_calls
+
+        # If only thinking (no action), no tool calls needed
+        if react_output.action is None:
+            return tool_calls
+
+        # Extract and validate tool call
+        tool_call = self._extract_tool_call(react_output.action)
+        if tool_call:
+            tool_calls.append(tool_call)
 
         return tool_calls
+
+    def _validate_react_structure(self, react_output: ReActOutput) -> bool:
+        """
+        Validate that the ReAct response follows proper structure.
+        """
+        # Must have a thought
+        if not react_output.thought or not react_output.thought.strip():
+            print("ReAct validation error: Missing or empty 'thought' field")
+            return False
+
+        # Should have either action OR answer, not both
+        has_action = react_output.action is not None
+        has_answer = react_output.answer is not None
+        
+        if has_action and has_answer:
+            print("ReAct validation error: Cannot have both 'action' and 'answer' in same response")
+            return False
+
+        # If has action, validate action structure
+        if has_action and react_output.action is not None:
+            if not react_output.action.tool_name:
+                print("ReAct validation error: Action missing tool_name")
+                return False
+            if not react_output.action.tool_params:
+                print("ReAct validation error: Action missing tool_params")
+                return False
+
+        return True
+
+    def _extract_tool_call(self, action: Action) -> Optional[ToolCall]:
+        """
+        Extract a ToolCall from a ReAct Action.
+        """
+        try:
+            tool_name = action.tool_name
+            tool_params = action.tool_params
+            
+            # Convert param list to dict
+            params: dict[str, Union[str, float, bool, None]] = {}
+            for param in tool_params:
+                params[param.name] = param.value
+
+            if not tool_name or not params:
+                print(f"Incomplete tool call: tool_name={tool_name}, params={params}")
+                return None
+
+            call_id = str(uuid.uuid4())
+            return ToolCall(
+                call_id=call_id,
+                tool_name=tool_name,
+                arguments=params,
+                arguments_json=json.dumps(params),
+            )
+            
+        except Exception as e:
+            print(f"Error extracting tool call: {e}")
+            return None

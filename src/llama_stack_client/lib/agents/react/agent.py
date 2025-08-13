@@ -4,16 +4,16 @@
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
 import logging
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 
 from llama_stack_client import LlamaStackClient
+from llama_stack_client.types import ToolResponseParam
 from llama_stack_client.types.agent_create_params import AgentConfig
 from llama_stack_client.types.agents.turn_create_params import Toolgroup
+from llama_stack_client.types.shared.tool_call import ToolCall
 from llama_stack_client.types.shared_params.agent_config import ToolConfig
 from llama_stack_client.types.shared_params.response_format import ResponseFormat
 from llama_stack_client.types.shared_params.sampling_params import SamplingParams
-
-from ..._types import Headers
 from ..agent import Agent, AgentUtils
 from ..client_tool import ClientTool
 from ..tool_parser import ToolParser
@@ -108,7 +108,8 @@ def get_agent_config_DEPRECATED(
 class ReActAgent(Agent):
     """ReAct agent.
 
-    Simple wrapper around Agent to add prepare prompts for creating a ReAct agent from a list of tools.
+    Implements the ReAct (Reasoning + Acting) pattern with proper observation formatting.
+    Enhances the base Agent with ReAct-specific conversation flow and observation handling.
     """
 
     def __init__(
@@ -129,7 +130,7 @@ class ReActAgent(Agent):
         builtin_toolgroups: Tuple[str] = (),  # DEPRECATED
         client_tools: Tuple[ClientTool] = (),  # DEPRECATED
         custom_agent_config: Optional[AgentConfig] = None,  # DEPRECATED
-        extra_headers: Headers | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ):
         """Construct an Agent with the given parameters.
 
@@ -226,3 +227,48 @@ class ReActAgent(Agent):
                 enable_session_persistence=enable_session_persistence,
                 extra_headers=extra_headers,
             )
+
+    def _format_observation(self, tool_response_content: str) -> str:
+        """
+        Format tool response as a ReAct observation.
+        
+        Args:
+            tool_response_content: The raw content from tool execution
+            
+        Returns:
+            Formatted observation string following ReAct pattern
+        """
+        # Clean up the content and format as observation
+        content = str(tool_response_content).strip()
+        return f"Observation: {content}"
+
+    def _run_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResponseParam]:
+        """
+        Override parent method to format tool responses as ReAct observations.
+        """
+        # Call parent method to get standard responses
+        responses = super()._run_tool_calls(tool_calls)
+        
+        # Format each response as a ReAct observation
+        formatted_responses = []
+        for response in responses:
+            if hasattr(response, 'content') and response.content:
+                # Format the content as a ReAct observation
+                formatted_observation = self._format_observation(response.content)
+                
+                # Create new response with formatted content
+                if hasattr(response, 'call_id') and hasattr(response, 'tool_name'):
+                    formatted_response = ToolResponseParam(
+                        call_id=response.call_id,
+                        tool_name=response.tool_name,
+                        content=formatted_observation,
+                    )
+                    formatted_responses.append(formatted_response)
+                else:
+                    # If we can't access the attributes, just format the content
+                    formatted_responses.append(response)
+            else:
+                # Keep original response if no content
+                formatted_responses.append(response)
+                
+        return formatted_responses
